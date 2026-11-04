@@ -12,7 +12,16 @@ import { BedsPage } from './pages/Beds';
 import { PharmacyPage } from './pages/Pharmacy';
 import { BillingPage } from './pages/Billing';
 import { AdminUsersPage } from './pages/AdminUsers';
-import { HubPage } from './pages/Hub';
+import { AdmissionsPage } from './pages/Admissions';
+import { InpatientCarePage } from './pages/InpatientCare';
+import { MedicalRecordPage } from './pages/MedicalRecord';
+import { CatalogPage } from './pages/Catalog';
+import { SystemConfigPage } from './pages/SystemConfig';
+import { MonitoringPage } from './pages/Monitoring';
+import { ReportsPage } from './pages/Reports';
+import { NotificationsPage } from './pages/Notifications';
+import { IoTMonitorPage } from './pages/IoTMonitor';
+import { ResourcesPage } from './pages/Resources';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { token, user, loadMe, loading } = useAuth();
@@ -28,24 +37,26 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/"
-        element={
-          <RequireAuth>
-            <AppLayout />
-          </RequireAuth>
-        }
-      >
+      <Route path="/" element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<DashboardPage />} />
         <Route path="patients" element={<PatientsPage />} />
         <Route path="reception" element={<ReceptionPage />} />
         <Route path="queue" element={<DoctorQueuePage />} />
         <Route path="encounters/:id" element={<EncounterExamPage />} />
+        <Route path="medical-record" element={<MedicalRecordPage />} />
+        <Route path="admissions" element={<AdmissionsPage />} />
+        <Route path="inpatient-care" element={<InpatientCarePage />} />
         <Route path="beds" element={<BedsPage />} />
+        <Route path="resources" element={<ResourcesPage />} />
+        <Route path="iot" element={<IoTMonitorPage />} />
         <Route path="pharmacy" element={<PharmacyPage />} />
         <Route path="billing" element={<BillingPage />} />
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
-        <Route path="hub" element={<HubPage />} />
+        <Route path="admin/catalog" element={<CatalogPage />} />
+        <Route path="admin/config" element={<SystemConfigPage />} />
+        <Route path="admin/monitoring" element={<MonitoringPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
