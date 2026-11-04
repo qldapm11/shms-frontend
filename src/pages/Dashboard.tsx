@@ -26,9 +26,31 @@ export function DashboardPage() {
         <Col xs={12} md={6}><Card><Statistic title="Tổng doanh thu" value={d.revenue?.total ?? 0} suffix="đ" /></Card></Col>
         <Col xs={12} md={6}><Card><Statistic title="Lượt đang khám" value={enc.IN_EXAM ?? 0} /></Card></Col>
       </Row>
+      <BedForecast />
       <Typography.Paragraph type="secondary" style={{ marginTop: 16 }}>
         Số liệu lấy trực tiếp từ dữ liệu demo trong hệ thống.
       </Typography.Paragraph>
     </div>
+  );
+}
+
+// Widget AI dự báo giường (U05.3) — gọi /ai/bed-forecast (mô phỏng qua 9router adapter).
+function BedForecast() {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['ai-bed-forecast'],
+    queryFn: async () => (await api.get('/ai/bed-forecast')).data,
+    retry: false,
+  });
+  if (isLoading || error) return null; // ẩn nếu không có quyền ai.use
+  const f = data?.data || data || {};
+  return (
+    <Card title="AI dự báo nhu cầu giường (gợi ý — cần xác nhận)" style={{ marginTop: 16 }} size="small">
+      <Typography.Paragraph type="secondary" style={{ marginBottom: 8 }}>
+        Kết quả mô phỏng qua 9router adapter. Nhãn: GỢI Ý AI — cần nhân viên y tế xác nhận.
+      </Typography.Paragraph>
+      <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 6, fontSize: 12, overflow: 'auto' }}>
+        {JSON.stringify(f, null, 2)}
+      </pre>
+    </Card>
   );
 }

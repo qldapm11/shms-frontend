@@ -54,7 +54,7 @@ export function ReceptionPage() {
 
   const { data: departments } = useQuery({
     queryKey: ['reception-departments'],
-    queryFn: async () => (await api.get('/admin/departments')).data.data as Department[],
+    queryFn: async () => (await api.get('/catalog/departments')).data.data as Department[],
   });
 
   const createPatient = useMutation({
