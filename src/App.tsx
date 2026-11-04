@@ -1,0 +1,53 @@
+import { useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './store/auth';
+import { LoginPage } from './pages/Login';
+import { AppLayout } from './layout/AppLayout';
+import { DashboardPage } from './pages/Dashboard';
+import { PatientsPage } from './pages/Patients';
+import { ReceptionPage } from './pages/Reception';
+import { DoctorQueuePage } from './pages/DoctorQueue';
+import { EncounterExamPage } from './pages/EncounterExam';
+import { BedsPage } from './pages/Beds';
+import { PharmacyPage } from './pages/Pharmacy';
+import { BillingPage } from './pages/Billing';
+import { AdminUsersPage } from './pages/AdminUsers';
+import { HubPage } from './pages/Hub';
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { token, user, loadMe, loading } = useAuth();
+  useEffect(() => {
+    if (token && !user) loadMe();
+  }, [token, user, loadMe]);
+  if (!token) return <Navigate to="/login" replace />;
+  if (loading || !user) return null;
+  return <>{children}</>;
+}
+
+export function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="patients" element={<PatientsPage />} />
+        <Route path="reception" element={<ReceptionPage />} />
+        <Route path="queue" element={<DoctorQueuePage />} />
+        <Route path="encounters/:id" element={<EncounterExamPage />} />
+        <Route path="beds" element={<BedsPage />} />
+        <Route path="pharmacy" element={<PharmacyPage />} />
+        <Route path="billing" element={<BillingPage />} />
+        <Route path="admin/users" element={<AdminUsersPage />} />
+        <Route path="hub" element={<HubPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
