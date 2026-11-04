@@ -16,7 +16,7 @@ import {
   App,
 } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { api, apiError } from '../api/client';
 
@@ -48,6 +48,19 @@ interface Warning {
   severity: string;
   note: string;
 }
+interface Service {
+  id: string;
+  code: string;
+  name: string;
+  specialty?: string | null;
+}
+interface Order {
+  id: string;
+  type: string;
+  serviceId?: string | null;
+  status: string;
+  resultJson?: string | null;
+}
 
 const STATUS_LABEL: Record<string, { text: string; color: string }> = {
   DRAFT: { text: 'Nháp', color: 'default' },
@@ -57,6 +70,7 @@ const STATUS_LABEL: Record<string, { text: string; color: string }> = {
 export function EncounterExamPage() {
   const { id = '' } = useParams();
   const { message } = App.useApp();
+  const qc = useQueryClient();
 
   // ---------- Tab Khám & chẩn đoán ----------
   const [diagnoses, setDiagnoses] = useState<Icd10[]>([]);
@@ -328,6 +342,156 @@ export function EncounterExamPage() {
     </Card>
   );
 
+  // ---------- Tab Chỉ định cận lâm sàng (U02.5) ----------
+  const [orderForm] = Form.useForm();
+
+  const { data: services, isError: servicesForbidden } = useQuery({
+    queryKey: ['services'],
+    queryFn: async () => (await api.get('/catalog/services')).data.data as Service[],
+    retry: false,
+  });
+
+  const { data: orders } = useQuery({
+    queryKey: ['orders', id],
+    queryFn: async () => (await api.get(`/encounters/${id}/orders`)).data.data as Order[],
+    enabled: !!id,
+    retry: false,
+  });
+
+  const createOrder = useMutation({
+    mutationFn: async (v: { type: 'LAB' | 'IMAGING'; serviceId?: string }) =>
+      (await api.post(`/encounters/${id}/orders`, v)).data.data as Order,
+    onSuccess: () => {
+      message.success('Đã tạo chỉ định');
+      orderForm.resetFields();
+      qc.invalidateQueries({ queryKey: ['orders', id] });
+    },
+    onError: (e) => message.error(apiError(e)),
+  });
+
+  const resultOrder = useMutation({
+    mutationFn: async (orderId: string) =>
+      (await api.post(`/orders/${orderId}/result`, {})).data.data as Order,
+    onSuccess: () => {
+      message.success('Đã nhập kết quả (mô phỏng)');
+      qc.invalidateQueries({ queryKey: ['orders', id] });
+    },
+    onError: (e) => message.error(apiError(e)),
+  });
+
+  const ORDER_TYPE_LABEL: Record<string, string> = { LAB: 'Xét nghiệm (LAB)', IMAGING: 'Chẩn đoán hình ảnh (IMAGING)' };
+  const ORDER_STATUS_LABEL: Record<string, { text: string; color: string }> = {
+    ORDERED: { text: 'Đã chỉ định', color: 'blue' },
+    RESULTED: { text: 'Có kết quả', color: 'green' },
+  };
+
+  const orderColumns = [
+    { title: 'Loại', dataIndex: 'type', key: 'type', render: (t: string) => ORDER_TYPE_LABEL[t] ?? t },
+    {
+      title: 'Dịch vụ',
+      dataIndex: 'serviceId',
+      key: 'serviceId',
+      render: (sid?: string | null) => {
+        if (!sid) return '—';
+        const s = (services ?? []).find((x) => x.id === sid);
+        return s ? `${s.code} — ${s.name}` : sid;
+      },
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (st: string) => {
+        const tag = ORDER_STATUS_LABEL[st] ?? { text: st, color: 'default' };
+        return <Tag color={tag.color}>{tag.text}</Tag>;
+      },
+    },
+    {
+      title: 'Kết quả',
+      key: 'result',
+      render: (_: unknown, r: Order) =>
+        r.resultJson ? (
+          <pre style={{ margin: 0, maxWidth: 360, whiteSpace: 'pre-wrap', fontSize: 12 }}>
+            {(() => {
+              try {
+                return JSON.stringify(JSON.parse(r.resultJson), null, 2);
+              } catch {
+                return r.resultJson;
+              }
+            })()}
+          </pre>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      title: '',
+      key: 'action',
+      render: (_: unknown, r: Order) =>
+        r.status === 'RESULTED' ? (
+          <Tag color="purple">mô phỏng LIS/RIS</Tag>
+        ) : (
+          <Button
+            size="small"
+            loading={resultOrder.isPending && resultOrder.variables === r.id}
+            onClick={() => resultOrder.mutate(r.id)}
+          >
+            Nhập kết quả (mô phỏng)
+          </Button>
+        ),
+    },
+  ];
+
+  const ordersTab = (
+    <Card>
+      {servicesForbidden && (
+        <Alert
+          style={{ marginBottom: 12 }}
+          type="warning"
+          message="Không tải được danh mục dịch vụ (có thể thiếu quyền)."
+        />
+      )}
+      <Form form={orderForm} layout="vertical" onFinish={(v) => createOrder.mutate(v)}>
+        <Space align="start" wrap>
+          <Form.Item name="type" label="Loại chỉ định" rules={[{ required: true, message: 'Chọn loại' }]}>
+            <Select
+              style={{ width: 240 }}
+              placeholder="Chọn loại"
+              options={[
+                { value: 'LAB', label: 'Xét nghiệm (LAB)' },
+                { value: 'IMAGING', label: 'Chẩn đoán hình ảnh (IMAGING)' },
+              ]}
+            />
+          </Form.Item>
+          <Form.Item name="serviceId" label="Dịch vụ">
+            <Select
+              showSearch
+              allowClear
+              style={{ width: 320 }}
+              placeholder="Chọn dịch vụ"
+              optionFilterProp="label"
+              options={(services ?? []).map((s) => ({ value: s.id, label: `${s.code} — ${s.name}` }))}
+            />
+          </Form.Item>
+          <Form.Item label=" ">
+            <Button type="primary" icon={<PlusOutlined />} htmlType="submit" loading={createOrder.isPending}>
+              Tạo chỉ định
+            </Button>
+          </Form.Item>
+        </Space>
+      </Form>
+
+      <Table
+        rowKey="id"
+        style={{ marginTop: 8 }}
+        columns={orderColumns}
+        dataSource={orders ?? []}
+        pagination={false}
+        size="small"
+      />
+    </Card>
+  );
+
   if (!id) return <Spin />;
 
   return (
@@ -337,6 +501,7 @@ export function EncounterExamPage() {
         items={[
           { key: 'exam', label: 'Khám & chẩn đoán', children: examTab },
           { key: 'prescribe', label: 'Kê đơn', children: prescribeTab },
+          { key: 'orders', label: 'Chỉ định cận lâm sàng', children: ordersTab },
         ]}
       />
     </div>
