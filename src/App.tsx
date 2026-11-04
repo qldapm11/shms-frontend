@@ -22,6 +22,10 @@ import { ReportsPage } from './pages/Reports';
 import { NotificationsPage } from './pages/Notifications';
 import { IoTMonitorPage } from './pages/IoTMonitor';
 import { ResourcesPage } from './pages/Resources';
+import { PortalPage } from './pages/Portal';
+import { RolesPermissionsPage } from './pages/RolesPermissions';
+import { AdvancedConfigPage } from './pages/AdvancedConfig';
+import { PatientHistoryPage } from './pages/PatientHistory';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { token, user, loadMe, loading } = useAuth();
@@ -53,10 +57,14 @@ export function App() {
         <Route path="billing" element={<BillingPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="portal" element={<PortalPage />} />
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="admin/catalog" element={<CatalogPage />} />
         <Route path="admin/config" element={<SystemConfigPage />} />
         <Route path="admin/monitoring" element={<MonitoringPage />} />
+        <Route path="admin/roles" element={<RolesPermissionsPage />} />
+        <Route path="admin/advanced" element={<AdvancedConfigPage />} />
+        <Route path="patient-history" element={<PatientHistoryPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

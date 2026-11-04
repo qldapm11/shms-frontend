@@ -17,12 +17,14 @@ interface NavGroup { key: string; label: string; icon: React.ReactNode; children
 // Menu phân nhóm theo nghiệp vụ. Mục/nhóm chỉ hiện khi người dùng có quyền tương ứng.
 const NAV: (NavItem | NavGroup)[] = [
   { key: '/', icon: <DashboardOutlined />, label: 'Tổng quan' },
+  { key: '/portal', icon: <HeartOutlined />, label: 'Cổng của tôi', perm: 'patient.self' },
   {
     key: 'g-tiepdon', label: 'Tiếp đón & khám', icon: <SolutionOutlined />, children: [
       { key: '/reception', icon: <SolutionOutlined />, label: 'Tiếp đón', perm: 'patient.write' },
       { key: '/patients', icon: <TeamOutlined />, label: 'Người bệnh', perm: 'patient.read' },
       { key: '/queue', icon: <UnorderedListOutlined />, label: 'Hàng chờ khám', perm: 'encounter.read' },
       { key: '/medical-record', icon: <FileProtectOutlined />, label: 'Bệnh án', perm: 'emr.read' },
+      { key: '/patient-history', icon: <FileProtectOutlined />, label: 'Lịch sử điều trị', perm: 'encounter.read' },
     ],
   },
   {
@@ -48,9 +50,11 @@ const NAV: (NavItem | NavGroup)[] = [
   },
   {
     key: 'g-quantri', label: 'Quản trị', icon: <SettingOutlined />, children: [
-      { key: '/admin/users', icon: <UserOutlined />, label: 'Người dùng & quyền', perm: 'admin.users' },
+      { key: '/admin/users', icon: <UserOutlined />, label: 'Người dùng', perm: 'admin.users' },
+      { key: '/admin/roles', icon: <UserOutlined />, label: 'Vai trò & nhập tài khoản', perm: 'admin.users' },
       { key: '/admin/catalog', icon: <DatabaseOutlined />, label: 'Danh mục', perm: 'admin.catalog' },
       { key: '/admin/config', icon: <SlidersOutlined />, label: 'Cấu hình', perm: 'admin.config' },
+      { key: '/admin/advanced', icon: <SlidersOutlined />, label: 'Quy trình & sao lưu', perm: 'admin.config' },
       { key: '/admin/monitoring', icon: <MonitorOutlined />, label: 'Giám sát', perm: 'admin.monitor' },
     ],
   },
